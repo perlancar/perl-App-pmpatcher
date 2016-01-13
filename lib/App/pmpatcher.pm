@@ -8,6 +8,9 @@ use strict;
 use warnings;
 use Log::Any::IfLOG '$log';
 
+use IPC::System::Options qw(system);
+use String::ShellQuote;
+
 our %SPEC;
 
 $SPEC{pmpatcher} = {
@@ -46,6 +49,16 @@ _
             schema => 'str*',
             req => 1,
         },
+        reverse => {
+            schema => ['bool', is=>1],
+            cmdline_aliases => {R=>{}},
+        },
+    },
+    deps => {
+        prog => 'patch',
+    },
+    features => {
+        dry_run => 1,
     },
 };
 sub pmpatcher {
@@ -66,7 +79,7 @@ sub pmpatcher {
 
   FILE:
     for my $fname (sort readdir $dh) {
-        next if $f eq '.' || $f eq '..';
+        next if $fname eq '.' || $fname eq '..';
         $log->tracef("Considering file '%s' ...", $fname);
         unless ($fname =~ /\A
                            pm-
@@ -74,28 +87,114 @@ sub pmpatcher {
                            ([0-9][0-9._]*)-
                            ([^.]+)
                            \.patch\z/x) {
-            $log->tracef("Skipped file '%s' (doesn't match pattern)");
+            $log->tracef("Skipped file '%s' (doesn't match pattern)", $fname);
             next FILE;
         }
         my ($mod0, $ver, $topic) = ($1, $2, $3);
-        #my $mod = $mod0; $mod =~ s!-!::!g;
+        my $mod = $mod0; $mod =~ s!-!::!g;
         my $mod_pm = $mod0; $mod_pm =~ s!-!/!g; $mod_pm .= ".pm";
 
-        my $path = Module::Path::More::module_path(module => $mod_pm);
-        unless ($path) {
-            $log->infof("Skipping patch '%s' (module %s not installed)");
+        my $mod_path = Module::Path::More::module_path(module=>$mod_pm);
+        unless ($mod_path) {
+            $log->infof("Skipping patch '%s' (module %s not installed)",
+                        $fname, $mod);
             next FILE;
         }
+        my $mod_dir = $mod_path; $mod_dir =~ s!(.+)[/\\].+!$1!;
 
         open my($fh), "<", "$patches_dir/$fname" or do {
+            $log->errorf("Skipping patch '%s' (can't open file: %s)",
+                         $fname, $!);
             $envres->add_result(500, "Can't open: $!", {item_id=>$fname});
             next FILE;
         };
 
-        $envres->add_result(200, "Applied", {item_id=>$fname});
+        my $out;
+        # first check if patch is already applied
+        system(
+            {shell=>1, log=>1, lang=>"C", capture_stdout=>\$out},
+            "patch", "-d", shell_quote($mod_dir),
+            "-t", "--dry-run",
+            "<", shell_quote("$patches_dir/$fname"),
+        );
+
+        if ($?) {
+            $log->errorf("Skipping patch '%s' (can't patch(1) to detect applied: %s)",
+                         $fname, $?);
+            $envres->add_result(
+                500, "Can't patch(1) to detect applied: $?", {item_id=>$fname});
+            next FILE;
+        }
+
+        my $already_applied = 0;
+        if ($out =~ /Reversed .*patch detected/) {
+            $already_applied = 1;
+        }
+
+        if ($args{reverse}) {
+            if (!$already_applied) {
+                $log->infof("Skipping patch '%s' (already reversed)", $fname);
+                $envres->add_result(
+                    304, "Already reversed", {item_id=>$fname});
+                next FILE;
+            } else {
+                if ($args{-dry_run}) {
+                    $envres->add_result(
+                        200, "Reverse-applying (dry-run)", {item_id=>$fname});
+                    next FILE;
+                }
+                system(
+                    {shell=>1, log=>1, lang=>"C", capture_stdout=>\$out},
+                    "patch", "-d", shell_quote($mod_dir),
+                    "--reverse",
+                    "<", shell_quote("$patches_dir/$fname"),
+                );
+                if ($?) {
+                    $log->errorf("Skipping patch '%s' (can't patch(2b) to reverse-apply: %s)",
+                                 $fname, $?);
+                    $envres->add_result(
+                        500, "Can't patch(2b) to reverse-apply: $?", {item_id=>$fname});
+                    next FILE;
+                }
+            }
+        } else {
+            if ($already_applied) {
+                $log->infof("Skipping patch '%s' (already applied)", $fname);
+                $envres->add_result(
+                    304, "Already applied", {item_id=>$fname});
+                next FILE;
+            } else {
+                if ($args{-dry_run}) {
+                    $envres->add_result(
+                        200, "Applying (dry-run)", {item_id=>$fname});
+                    next FILE;
+                }
+                system(
+                    {shell=>1, log=>1, lang=>"C", capture_stdout=>\$out},
+                    "patch", "-d", shell_quote($mod_dir),
+                    "--forward",
+                    "<", shell_quote("$patches_dir/$fname"),
+                );
+                if ($?) {
+                    $log->errorf("Skipping patch '%s' (can't patch(2) to apply: %s)",
+                                 $fname, $?);
+                    $envres->add_result(
+                        500, "Can't patch(2) to apply: $?", {item_id=>$fname});
+                    next FILE;
+                }
+            }
+        }
+
+        $envres->add_result(
+            200, ($args{reverse} ? "Reverse-applied" : "Applied"),
+            {item_id=>$fname});
     }
 
-    $envres->as_struct;
+    my $res = $envres->as_struct;
+    $res->[2] = $res->[3]{results};
+    $res->[3]{'table.fields'} = [qw/item_id status message/];
+    #$res->[3]{'table.hide_unknown_fields'} = 1;
+    $res;
 }
 
 1;
