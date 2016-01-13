@@ -31,7 +31,8 @@ to an installation is a lightweight alternative to creating a fork for each of
 these modules.
 
 This utility helps you making the process of applying these patches more
-convenient.
+convenient. Basically this utility just locates all the target modules and
+feeds all of these patches to the `patch` program.
 
 To use this utility, first of all you need to gather all your module patches in
 a single directory (see `patches_dir` option). Also, you need to make sure that
@@ -41,7 +42,31 @@ all your `*.patch` files match this name pattern:
 
 Then, to apply all the patches, you just call:
 
+    % pmpatcher --patches-dir ~/patches
+
+(Or, you might also want to put `patches_dir=/path/to/patches` into
+`~/pmpatches.conf` to save you from having to type the option repeatedly.)
+
+Example result:
+
+    +--------------------------------------------------------------+--------+---------+
+    | item_id                                                      | status | message |
+    +--------------------------------------------------------------+--------+---------+
+    | pm-OrePAN-Archive-0.08-support_no_index_file.patch           | 200    | Applied |
+    | pm-Pod-Elemental-PerlMunger-0.200002-DATA_encoding_fix.patch | 200    | Applied |
+    +--------------------------------------------------------------+--------+---------+
+
+If you try to run it again, you might get:
+
     % pmpatcher
+    +--------------------------------------------------------------+--------+-----------------+
+    | item_id                                                      | status | message         |
+    +--------------------------------------------------------------+--------+-----------------+
+    | pm-OrePAN-Archive-0.08-support_no_index_file.patch           | 304    | Already applied |
+    | pm-Pod-Elemental-PerlMunger-0.200002-DATA_encoding_fix.patch | 304    | Already applied |
+    +--------------------------------------------------------------+--------+-----------------+
+
+There's also a `--dry-run` and a `-R` (`--reverse`) option, just like `patch`.
 
 _
     args => {
