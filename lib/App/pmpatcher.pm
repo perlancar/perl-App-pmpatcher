@@ -138,9 +138,11 @@ sub pmpatcher {
         # first check if patch is already applied
         system(
             {shell=>1, log=>1, lang=>"C", capture_stdout=>\$out},
-            "patch", "-d", shell_quote($mod_dir),
-            "-t", "--dry-run",
-            "<", shell_quote("$patches_dir/$fname"),
+            join(" ",
+                 "patch", "-d", shell_quote($mod_dir),
+                 "-t", "--dry-run",
+                 "<", shell_quote("$patches_dir/$fname"),
+             ),
         );
 
         if ($?) {
@@ -170,9 +172,11 @@ sub pmpatcher {
                 }
                 system(
                     {shell=>1, log=>1, lang=>"C", capture_stdout=>\$out},
-                    "patch", "-d", shell_quote($mod_dir),
-                    "--reverse",
-                    "<", shell_quote("$patches_dir/$fname"),
+                    join(" ",
+                         "patch", "-d", shell_quote($mod_dir),
+                         "--reverse",
+                         "<", shell_quote("$patches_dir/$fname"),
+                     ),
                 );
                 if ($?) {
                     $log->errorf("Skipping patch '%s' (can't patch(2b) to reverse-apply: %s)",
@@ -196,9 +200,11 @@ sub pmpatcher {
                 }
                 system(
                     {shell=>1, log=>1, lang=>"C", capture_stdout=>\$out},
-                    "patch", "-d", shell_quote($mod_dir),
-                    "--forward",
-                    "<", shell_quote("$patches_dir/$fname"),
+                    join(" ",
+                         "patch", "-d", shell_quote($mod_dir),
+                         "--forward",
+                         "<", shell_quote("$patches_dir/$fname"),
+                     ),
                 );
                 if ($?) {
                     $log->errorf("Skipping patch '%s' (can't patch(2) to apply: %s)",
