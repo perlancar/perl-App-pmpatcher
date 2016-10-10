@@ -1,5 +1,11 @@
 Revision history for App-pmpatches
 
+0.03    2016-10-10 (PERLANCAR)
+
+	- [Bugfix] in system(), join command as string to avoid '<' being
+	  quoted.
+
+
 0.02    2016-01-13 (PERLANCAR)
 
 	- No functional changes.
