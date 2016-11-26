@@ -85,6 +85,9 @@ _
     features => {
         dry_run => 1,
     },
+    links => [
+        {url=>'prog:progpatcher'},
+    ],
 };
 sub pmpatcher {
     require Module::Path::More;
