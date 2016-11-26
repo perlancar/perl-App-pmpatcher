@@ -25,7 +25,7 @@ my `patches` directory:
     pm-OrePAN-Archive-0.08-support_no_index_file.patch
     pm-Pod-Elemental-PerlMunger-0.200002-DATA_encoding_fix.patch
 
-These patches might be pending merge by the module maintainer, or of private
+These patches might be pending merge by the module maintainer, or are of private
 nature so might never be merged, or of any other nature. Applying module patches
 to an installation is a lightweight alternative to creating a fork for each of
 these modules.
