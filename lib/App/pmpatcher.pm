@@ -45,7 +45,7 @@ Then, to apply all the patches, you just call:
     % pmpatcher --patches-dir ~/patches
 
 (Or, you might also want to put `patches_dir=/path/to/patches` into
-`~/pmpatches.conf` to save you from having to type the option repeatedly.)
+`~/pmpatcher.conf` to save you from having to type the option repeatedly.)
 
 Example result:
 
