@@ -49,6 +49,7 @@ Then, to apply all the patches, you just call:
 
 Example result:
 
+    % pmpatcher
     +--------------------------------------------------------------+--------+---------+
     | item_id                                                      | status | message |
     +--------------------------------------------------------------+--------+---------+
@@ -128,7 +129,7 @@ sub pmpatcher {
                         $fname, $mod);
             next FILE;
         }
-        my $mod_dir = $mod_path; $mod_dir =~ s!(.+)[/\\].+!$1!;
+        (my $mod_dir = $mod_path) =~ s!(.+)[/\\].+!$1!;
 
         open my($fh), "<", "$patches_dir/$fname" or do {
             $log->errorf("Skipping patch '%s' (can't open file: %s)",
