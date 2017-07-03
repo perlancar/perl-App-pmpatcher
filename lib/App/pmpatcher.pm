@@ -6,7 +6,7 @@ package App::pmpatcher;
 use 5.010001;
 use strict;
 use warnings;
-use Log::Any::IfLOG '$log';
+use Log::ger;
 
 use IPC::System::Options qw(system);
 use String::ShellQuote;
@@ -100,7 +100,7 @@ sub pmpatcher {
         or return [400, "Please specify patches_dir"];
     $patches_dir =~ s!/\z!!; # convenience
 
-    $log->tracef("Opening patches_dir '%s' ...", $patches_dir);
+    log_trace("Opening patches_dir '%s' ...", $patches_dir);
     opendir my($dh), $patches_dir
         or return [500, "Can't open patches_dir '$patches_dir': $!"];
 
@@ -109,14 +109,14 @@ sub pmpatcher {
   FILE:
     for my $fname (sort readdir $dh) {
         next if $fname eq '.' || $fname eq '..';
-        $log->tracef("Considering file '%s' ...", $fname);
+        log_trace("Considering file '%s' ...", $fname);
         unless ($fname =~ /\A
                            pm-
                            (\w+(?:-\w+)*)-
                            ([0-9][0-9._]*)-
                            ([^.]+)
                            \.patch\z/x) {
-            $log->tracef("Skipped file '%s' (doesn't match pattern)", $fname);
+            log_trace("Skipped file '%s' (doesn't match pattern)", $fname);
             next FILE;
         }
         my ($mod0, $ver, $topic) = ($1, $2, $3);
@@ -125,14 +125,14 @@ sub pmpatcher {
 
         my $mod_path = Module::Path::More::module_path(module=>$mod_pm);
         unless ($mod_path) {
-            $log->infof("Skipping patch '%s' (module %s not installed)",
+            log_info("Skipping patch '%s' (module %s not installed)",
                         $fname, $mod);
             next FILE;
         }
         (my $mod_dir = $mod_path) =~ s!(.+)[/\\].+!$1!;
 
         open my($fh), "<", "$patches_dir/$fname" or do {
-            $log->errorf("Skipping patch '%s' (can't open file: %s)",
+            log_error("Skipping patch '%s' (can't open file: %s)",
                          $fname, $!);
             $envres->add_result(500, "Can't open: $!", {item_id=>$fname});
             next FILE;
@@ -150,7 +150,7 @@ sub pmpatcher {
         );
 
         if ($?) {
-            $log->errorf("Skipping patch '%s' (can't patch(1) to detect applied: %s)",
+            log_error("Skipping patch '%s' (can't patch(1) to detect applied: %s)",
                          $fname, $?);
             $envres->add_result(
                 500, "Can't patch(1) to detect applied: $?", {item_id=>$fname});
@@ -164,7 +164,7 @@ sub pmpatcher {
 
         if ($args{reverse}) {
             if (!$already_applied) {
-                $log->infof("Skipping patch '%s' (already reversed)", $fname);
+                log_info("Skipping patch '%s' (already reversed)", $fname);
                 $envres->add_result(
                     304, "Already reversed", {item_id=>$fname});
                 next FILE;
@@ -183,7 +183,7 @@ sub pmpatcher {
                      ),
                 );
                 if ($?) {
-                    $log->errorf("Skipping patch '%s' (can't patch(2b) to reverse-apply: %s)",
+                    log_error("Skipping patch '%s' (can't patch(2b) to reverse-apply: %s)",
                                  $fname, $?);
                     $envres->add_result(
                         500, "Can't patch(2b) to reverse-apply: $?", {item_id=>$fname});
@@ -192,7 +192,7 @@ sub pmpatcher {
             }
         } else {
             if ($already_applied) {
-                $log->infof("Skipping patch '%s' (already applied)", $fname);
+                log_info("Skipping patch '%s' (already applied)", $fname);
                 $envres->add_result(
                     304, "Already applied", {item_id=>$fname});
                 next FILE;
@@ -211,7 +211,7 @@ sub pmpatcher {
                      ),
                 );
                 if ($?) {
-                    $log->errorf("Skipping patch '%s' (can't patch(2) to apply: %s)",
+                    log_error("Skipping patch '%s' (can't patch(2) to apply: %s)",
                                  $fname, $?);
                     $envres->add_result(
                         500, "Can't patch(2) to apply: $?", {item_id=>$fname});
