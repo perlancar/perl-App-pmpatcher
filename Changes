@@ -1,35 +1,35 @@
-0.06    2017-07-07 (PERLANCAR)
+0.06    2017-07-07  Released-By: PERLANCAR
 
 	- No functional changes.
 
 
-0.05    2017-07-03 (PERLANCAR)
+0.05    2017-07-03  Released-By: PERLANCAR
 
 	- No functional changes.
 
 	- Switch from Log::Any to Log::ger.
 
 
-0.04    2016-11-27 (PERLANCAR)
+0.04    2016-11-27  Released-By: PERLANCAR
 
 	- No functional changes.
 
 	- Mention progpatcher.
 
 
-0.03    2016-10-10 (PERLANCAR)
+0.03    2016-10-10  Released-By: PERLANCAR
 
 	- [Bugfix] in system(), join command as string to avoid '<' being
 	  quoted.
 
 
-0.02    2016-01-13 (PERLANCAR)
+0.02    2016-01-13  Released-By: PERLANCAR
 
 	- No functional changes.
 
 	- Tweak description and add sample results.
 
 
-0.01    2016-01-13 (PERLANCAR)
+0.01    2016-01-13  Released-By: PERLANCAR
 
         - First release.
